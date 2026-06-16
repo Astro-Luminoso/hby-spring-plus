@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: hby-spring-plus-test
+
+jwt:
+  secret:
+    key: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=

@@ -1,7 +1,7 @@
 HELP.md
 .gradle
+.gradle-user-home
 build/
-!gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
@@ -35,6 +35,5 @@ out/
 
 ### VS Code ###
 .vscode/
-
-### properties ###
-*.properties
+AGENTS.md
+.codex
