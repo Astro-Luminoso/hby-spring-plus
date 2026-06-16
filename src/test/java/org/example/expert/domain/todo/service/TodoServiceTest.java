@@ -43,7 +43,7 @@ class TodoServiceTest {
     @Test
     void saveTodo_스프링_프록시를_통해_todo를_저장한다() {
         // given
-        User user = userRepository.save(new User("user@example.com", "password", UserRole.USER));
+        User user = userRepository.save(new User("user@example.com", "nickname", "password", UserRole.USER));
         AuthUser authUser = new AuthUser(user.getId(), user.getEmail(), user.getUserRole());
         TodoSaveRequest request = new TodoSaveRequest("title", "contents");
 
