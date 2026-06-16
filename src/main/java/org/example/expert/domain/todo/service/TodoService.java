@@ -16,6 +16,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -48,10 +51,11 @@ public class TodoService {
         );
     }
 
-    public Page<TodoResponse> getTodos(int page, int size) {
+    public Page<TodoResponse> getTodos(int page, int size, String weather, LocalDateTime modifiedAtFrom, LocalDateTime modifiedAtTo) {
         Pageable pageable = PageRequest.of(page - 1, size);
+        String weatherCondition = StringUtils.hasText(weather) ? weather : null;
 
-        Page<Todo> todos = todoRepository.findAllByOrderByModifiedAtDesc(pageable);
+        Page<Todo> todos = todoRepository.searchTodos(weatherCondition, modifiedAtFrom, modifiedAtTo, pageable);
 
         return todos.map(todo -> new TodoResponse(
                 todo.getId(),
