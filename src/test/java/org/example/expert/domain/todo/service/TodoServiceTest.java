@@ -2,6 +2,7 @@ package org.example.expert.domain.todo.service;
 
 import org.example.expert.client.WeatherClient;
 import org.example.expert.domain.common.dto.AuthUser;
+import org.example.expert.domain.manager.repository.ManagerRepository;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
@@ -35,6 +36,9 @@ class TodoServiceTest {
     private TodoRepository todoRepository;
 
     @Autowired
+    private ManagerRepository managerRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -45,6 +49,7 @@ class TodoServiceTest {
 
     @BeforeEach
     void setUp() {
+        managerRepository.deleteAll();
         todoRepository.deleteAll();
         userRepository.deleteAll();
     }
@@ -69,6 +74,13 @@ class TodoServiceTest {
         assertThat(savedTodo.getContents()).isEqualTo("contents");
         assertThat(savedTodo.getWeather()).isEqualTo("Sunny");
         assertThat(savedTodo.getUser().getId()).isEqualTo(user.getId());
+
+        assertThat(managerRepository.findByTodoIdWithUser(response.getId()))
+                .singleElement()
+                .satisfies(manager -> {
+                    assertThat(manager.getUser().getId()).isEqualTo(user.getId());
+                    assertThat(manager.getUser().getEmail()).isEqualTo(user.getEmail());
+                });
     }
 
     @Test
