@@ -3,8 +3,10 @@ package org.example.expert.aop;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import org.example.expert.domain.user.dto.request.UserRoleChangeRequest;
+import org.example.expert.config.JwtUtil;
+import org.example.expert.config.SecurityConfig;
 import org.example.expert.domain.user.controller.UserAdminController;
+import org.example.expert.domain.user.dto.request.UserRoleChangeRequest;
 import org.example.expert.domain.user.service.UserAdminService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -21,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.example.expert.support.SecurityMockMvcSupport.authenticatedAdmin;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -29,9 +31,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserAdminController.class)
-@Import(AdminAccessLoggingAspect.class)
+@Import({AdminAccessLoggingAspect.class, SecurityConfig.class, JwtUtil.class})
 @ImportAutoConfiguration(AopAutoConfiguration.class)
-@AutoConfigureMockMvc(addFilters = false)
 class AdminAccessLoggingAspectTest {
 
     private static final long ADMIN_ID = 1L;
@@ -39,6 +40,9 @@ class AdminAccessLoggingAspectTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @MockBean
     private UserAdminService userAdminService;
@@ -75,7 +79,7 @@ class AdminAccessLoggingAspectTest {
         }).when(userAdminService).changeUserRole(eq(TARGET_USER_ID), any(UserRoleChangeRequest.class));
 
         mockMvc.perform(patch("/admin/users/{userId}", TARGET_USER_ID)
-                        .requestAttr("userId", ADMIN_ID)
+                        .with(authenticatedAdmin(jwtUtil, ADMIN_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"role\":\"ADMIN\"}"))
                 .andExpect(status().isOk());
