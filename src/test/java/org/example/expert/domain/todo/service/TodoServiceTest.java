@@ -1,5 +1,7 @@
 package org.example.expert.domain.todo.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import org.example.expert.client.WeatherClient;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.manager.repository.ManagerRepository;
@@ -11,6 +13,8 @@ import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.enums.UserRole;
 import org.example.expert.domain.user.repository.UserRepository;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.support.AopUtils;
@@ -26,7 +30,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
-@SpringBootTest
+@SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 class TodoServiceTest {
 
     @Autowired
@@ -43,6 +47,12 @@ class TodoServiceTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
 
     @MockBean
     private WeatherClient weatherClient;
@@ -81,6 +91,31 @@ class TodoServiceTest {
                     assertThat(manager.getUser().getId()).isEqualTo(user.getId());
                     assertThat(manager.getUser().getEmail()).isEqualTo(user.getEmail());
                 });
+    }
+
+    @Test
+    void getTodo_todo와_작성자를_join_fetch로_한번에_조회한다() {
+        // given
+        User user = userRepository.save(new User("user@example.com", "nickname", "password", UserRole.USER));
+        Todo todo = todoRepository.save(new Todo("title", "contents", "Sunny", user));
+
+        todoRepository.flush();
+        entityManager.clear();
+
+        Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.clear();
+
+        // when
+        TodoResponse response = todoService.getTodo(todo.getId());
+
+        // then
+        assertThat(response.getId()).isEqualTo(todo.getId());
+        assertThat(response.getTitle()).isEqualTo("title");
+        assertThat(response.getContents()).isEqualTo("contents");
+        assertThat(response.getWeather()).isEqualTo("Sunny");
+        assertThat(response.getUser().getId()).isEqualTo(user.getId());
+        assertThat(response.getUser().getEmail()).isEqualTo("user@example.com");
+        assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
     }
 
     @Test
