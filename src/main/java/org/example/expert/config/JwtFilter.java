@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.expert.domain.common.dto.AuthUser;
+import org.example.expert.domain.common.exception.ServerException;
 import org.example.expert.domain.user.enums.UserRole;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -46,9 +47,9 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        String jwt = jwtUtil.substringToken(bearerJwt);
-
         try {
+            String jwt = jwtUtil.substringToken(bearerJwt);
+
             // JWT 유효성 검사와 claims 추출
             Claims claims = jwtUtil.extractClaims(jwt);
             if (claims == null) {
@@ -83,6 +84,10 @@ public class JwtFilter extends OncePerRequestFilter {
             SecurityContextHolder.clearContext();
             log.error("Unsupported JWT token, 지원되지 않는 JWT 토큰 입니다.", e);
             httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "지원되지 않는 JWT 토큰입니다.");
+        } catch (ServerException e) {
+            SecurityContextHolder.clearContext();
+            log.error("Invalid Authorization header, 잘못된 Authorization 헤더입니다.", e);
+            httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "잘못된 JWT 토큰입니다.");
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
             log.error("Internal server error", e);
